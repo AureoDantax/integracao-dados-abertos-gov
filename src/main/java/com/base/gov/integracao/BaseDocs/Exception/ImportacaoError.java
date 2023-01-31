@@ -1,5 +1,6 @@
 package com.base.gov.integracao.BaseDocs.Exception;
 
+import com.base.gov.integracao.BaseDocs.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 
-public class ImportacaoError {
+public class ImportacaoError extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,12 +31,12 @@ public class ImportacaoError {
 
     @Lob
     @Column(nullable = false)
-    private String payload;
+    private String row;
 
-    public ImportacaoError(String entityName, boolean b, String errorMessage, String payload) {
+    public ImportacaoError(String entityName, boolean b, String errorMessage, String row) {
         this.entityName = entityName;
         this.treated = treated;
         this.errorMessage = errorMessage;
-        this.payload = String.valueOf(payload);
+        this.row = String.valueOf(row);
     }
 }
