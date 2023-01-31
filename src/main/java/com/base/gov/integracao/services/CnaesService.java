@@ -2,6 +2,8 @@ package com.base.gov.integracao.services;
 
 import com.base.gov.integracao.BaseDocs.Cnaes;
 import com.base.gov.integracao.repositories.CnaesRepository;
+import com.base.gov.integracao.repositories.ImportacaoErrorLogRepository;
+import com.base.gov.integracao.services.PersistError.PersistError;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Arrays;
 
 import static com.base.gov.integracao.BaseDocs.BaseEntity.CSV_ENCODING;
 import static com.base.gov.integracao.BaseDocs.ColunaIndex.COLUNA_CODIGO;
@@ -22,7 +25,8 @@ import static com.base.gov.integracao.BaseDocs.ColunaIndex.COLUNA_DESC;
 @Service
 public class CnaesService implements PersistDataFile {
 
-
+    @Autowired
+    ImportacaoErrorLogRepository errorLogRepository;
     @Autowired
     CnaesRepository cnaesRepository;
 
@@ -37,15 +41,20 @@ public class CnaesService implements PersistDataFile {
 
 
         while ((conteudo = csvReader.readNext()) != null) {
-
-            Cnaes cnaes = Cnaes.builder()
-                    .codigo(conteudo[COLUNA_CODIGO.getIndex()])
-                    .descricao(conteudo[COLUNA_DESC.getIndex()])
-                    .build();
-            cnaesRepository.save(cnaes);
+            try {
+                Cnaes cnaes = Cnaes.builder()
+                        .codigo(conteudo[COLUNA_CODIGO.getIndex()])
+                        .descricao(conteudo[COLUNA_DESC.getIndex()])
+                        .build();
+                cnaesRepository.save(cnaes);
+            } catch (Exception ex) {
+                PersistError.persist(Cnaes.class.getSimpleName(), ex.getMessage(), Arrays.toString(conteudo),errorLogRepository);
+            }
+            csvReader.close();
+            streamReader.close();
         }
-        csvReader.close();
-        streamReader.close();
+
+
     }
 }
 

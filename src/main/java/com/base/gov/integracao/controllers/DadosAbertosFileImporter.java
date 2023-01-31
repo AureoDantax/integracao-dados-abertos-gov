@@ -89,7 +89,7 @@ public class DadosAbertosFileImporter {
             return ResponseEntity.ok("Arquivos salvos no banco");
         } catch (Exception e) {
             log.error("Falha ao carregar o arquivo" + " motivo: " + e.getMessage());
-            return new ResponseEntity("error: Falha ao carregar arquivos\n" + e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity("erro: Falha ao carregar arquivos\n" + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 

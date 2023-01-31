@@ -1,11 +1,13 @@
 package com.base.gov.integracao.services;
 
+import com.base.gov.integracao.BaseDocs.Motivo;
+import com.base.gov.integracao.repositories.ImportacaoErrorLogRepository;
+import com.base.gov.integracao.repositories.MotivoRepository;
+import com.base.gov.integracao.services.PersistError.PersistError;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.base.gov.integracao.BaseDocs.Motivo;
-import com.base.gov.integracao.repositories.MotivoRepository;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Arrays;
 
 import static com.base.gov.integracao.BaseDocs.BaseEntity.CSV_ENCODING;
 import static com.base.gov.integracao.BaseDocs.ColunaIndex.COLUNA_CODIGO;
@@ -21,7 +24,8 @@ import static com.base.gov.integracao.BaseDocs.ColunaIndex.COLUNA_DESC;
 @Service
 public class MotivoService implements PersistDataFile {
 
-
+    @Autowired
+    ImportacaoErrorLogRepository errorLogRepository;
     @Autowired
     MotivoRepository motivoRepository;
 
@@ -37,14 +41,20 @@ public class MotivoService implements PersistDataFile {
 
         while ((conteudo = csvReader.readNext()) != null) {
 
-            Motivo motivo = Motivo.builder()
-                    .codigo(conteudo[COLUNA_CODIGO.getIndex()])
-                    .descricao(conteudo[COLUNA_DESC.getIndex()])
-                    .build();
-            motivoRepository.save(motivo);
+            try {
+                Motivo motivo = Motivo.builder()
+                        .codigo(conteudo[COLUNA_CODIGO.getIndex()])
+                        .descricao(conteudo[COLUNA_DESC.getIndex()])
+                        .build();
+                motivoRepository.save(motivo);
+            } catch (Exception ex) {
+                PersistError.persist(Motivo.class.getSimpleName(), ex.getMessage(), Arrays.toString(conteudo),errorLogRepository);
+            }
         }
         csvReader.close();
         streamReader.close();
     }
+
+
 }
 
