@@ -5,6 +5,8 @@ import com.base.gov.integracao.BaseDocs.Empresa;
 import com.base.gov.integracao.BaseDocs.Natureza;
 import com.base.gov.integracao.BaseDocs.Qualificacao;
 import com.base.gov.integracao.repositories.EmpresaRepository;
+import com.base.gov.integracao.repositories.ImportacaoErrorLogRepository;
+import com.base.gov.integracao.services.PersistError.PersistError;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 import static com.base.gov.integracao.BaseDocs.BaseEntity.CSV_ENCODING;
 import static com.base.gov.integracao.BaseDocs.ColunaIndex.*;
@@ -23,6 +26,8 @@ import static com.base.gov.integracao.BaseDocs.ColunaIndex.*;
 @Service
 public class EmpresaService implements PersistDataFile {
 
+    @Autowired
+    ImportacaoErrorLogRepository errorLogRepository;
 
     @Autowired
     EmpresaRepository empresaRepository;
@@ -39,18 +44,20 @@ public class EmpresaService implements PersistDataFile {
 
         while ((conteudo = csvReader.readNext()) != null) {
 
-
-            Empresa empresa = Empresa.builder()
-                    .cnpj(conteudo[COLUNA_CNPJ.getIndex()])
-                    .razaoSocial(conteudo[COLUNA_RAZAO_SOCIAL.getIndex()])
-                    .naturezaJuridica(Natureza.builder().codigo(conteudo[COLUNA_NATUREZA.getIndex()]).build())
-                    .qualificacao(Qualificacao.builder().codigo(conteudo[COLUNA_QUALIFICACAO.getIndex()]).build())
-                    .capital(conteudo[COLUNA_CAPITAL.getIndex()])
-                    .porte(PorteEmpresa.builder().codigo(conteudo[COLUNA_PORTE.getIndex()]).build())
-                    .enteFederativo(conteudo[COLUNA_ENTE_FEDERATIVO.getIndex()])
-                    .build();
-            empresaRepository.save(empresa);
-
+            try {
+                Empresa empresa = Empresa.builder()
+                        .cnpj(conteudo[COLUNA_CNPJ.getIndex()])
+                        .razaoSocial(conteudo[COLUNA_RAZAO_SOCIAL.getIndex()])
+                        .naturezaJuridica(Natureza.builder().codigo(conteudo[COLUNA_NATUREZA.getIndex()]).build())
+                        .qualificacao(Qualificacao.builder().codigo(conteudo[COLUNA_QUALIFICACAO.getIndex()]).build())
+                        .capital(conteudo[COLUNA_CAPITAL.getIndex()])
+                        .porte(PorteEmpresa.builder().codigo(conteudo[COLUNA_PORTE.getIndex()]).build())
+                        .enteFederativo(conteudo[COLUNA_ENTE_FEDERATIVO.getIndex()])
+                        .build();
+                empresaRepository.save(empresa);
+            } catch (Exception ex) {
+                PersistError.persist(Empresa.class.getSimpleName(), ex.getMessage(), Arrays.toString(conteudo),errorLogRepository);
+            }
 
         }
         csvReader.close();

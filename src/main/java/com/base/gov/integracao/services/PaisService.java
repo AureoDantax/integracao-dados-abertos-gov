@@ -1,17 +1,20 @@
 package com.base.gov.integracao.services;
 
+import com.base.gov.integracao.BaseDocs.Pais;
+import com.base.gov.integracao.repositories.ImportacaoErrorLogRepository;
+import com.base.gov.integracao.repositories.PaisRepository;
+import com.base.gov.integracao.services.PersistError.PersistError;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.base.gov.integracao.BaseDocs.Pais;
-import com.base.gov.integracao.repositories.PaisRepository;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 import static com.base.gov.integracao.BaseDocs.BaseEntity.CSV_ENCODING;
 import static com.base.gov.integracao.BaseDocs.ColunaIndex.COLUNA_CODIGO;
@@ -20,7 +23,8 @@ import static com.base.gov.integracao.BaseDocs.ColunaIndex.COLUNA_DESC;
 @Service
 public class PaisService implements PersistDataFile {
 
-
+    @Autowired
+    ImportacaoErrorLogRepository errorLogRepository;
     @Autowired
     PaisRepository paisRepository;
 
@@ -36,16 +40,19 @@ public class PaisService implements PersistDataFile {
 
         while ((conteudo = csvReader.readNext()) != null) {
 
-
-            Pais pais = Pais.builder()
-                    .codigo(conteudo[COLUNA_CODIGO.getIndex()])
-                    .descricao(conteudo[COLUNA_DESC.getIndex()]).build();
-            paisRepository.save(pais);
-
+            try {
+                Pais pais = Pais.builder()
+                        .codigo(conteudo[COLUNA_CODIGO.getIndex()])
+                        .descricao(conteudo[COLUNA_DESC.getIndex()]).build();
+                paisRepository.save(pais);
+            } catch (Exception ex) {
+                PersistError.persist(Pais.class.getSimpleName(), ex.getMessage(), Arrays.toString(conteudo),errorLogRepository);
+            }
 
         }
         csvReader.close();
         streamReader.close();
     }
+
 }
 

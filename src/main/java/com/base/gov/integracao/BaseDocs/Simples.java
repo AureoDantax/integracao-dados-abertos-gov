@@ -8,7 +8,7 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 @Data
-@Entity(name = "simples-nacional")
+@Entity(name = "simples_nacional")
 @SuperBuilder
 @NoArgsConstructor
 public class Simples extends BaseEntity {
